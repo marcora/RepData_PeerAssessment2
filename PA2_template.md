@@ -7,7 +7,7 @@ In the following report, we present an analysis of the [NOAA Storm Events Databa
 - Which types of severe weather events are the most hazardous to the US population?
 - Which types of severe weather events are the most damaging to the US economy?
 
-By aggregating the records by event type, we generate summary tables and the corresponding barcharts for the top 10 types of severe weather events with the most negative impact on the US population (fatalities and injuries) and economy (property and crop damages). Overall, tornadoes are the most hazardous to the US population (with 96,979 fatalities and injuries). On the other hand, floods are the most damaging to the US economy (with $150B of property and crop damages).
+By aggregating the records by event type, we generate summary tables and the corresponding barcharts for the top 10 types of severe weather events with the most negative impact on the US population (fatalities and injuries) and economy (property and crop damages). In conclusion, tornadoes are the most hazardous to the US population and floods are the most damaging to the US economy.
 
 ## Data processing
 
@@ -18,6 +18,7 @@ First, we load the required packages and set some global options.
 library(dplyr)
 library(magrittr)
 library(stringr)
+library(lubridate)
 library(ggplot2)
 
 options(scipen = 1, digits = 2)
@@ -31,9 +32,10 @@ data = read.csv(bzfile("repdata-data-StormData.csv.bz2"))
 data = tbl_df(data)
 ```
 
-Then, we tidy the data by selecting, for each recorded severe weather event, only the variables needed for our analysis:
+Then, we tidy the data by selecting, for each recorded severe weather event, only the variables needed for this analysis:
 
 - EVTYPE = type of severe weather event
+- BGN_DATE = beginning date of severe weather event
 - FATALITIES = number of fatalities caused by the severe weather event
 - INJURIES = number of injuries caused by the severe weather event
 - PROPDMG = scientific notation coefficient of the property damage value caused by the severe weather event
@@ -41,32 +43,23 @@ Then, we tidy the data by selecting, for each recorded severe weather event, onl
 - CROPDMG = scientific notation coefficient of the crop damage value caused by the severe weather event
 - CROPDMGEXP = scientific notation exponent of the crop damage value caused by the severe weather event
 
+In addition, we transform the BGN_DATE variable to only include the year of the severe weather event and we strip+uppercase the EVTYPE variable to correct for the most obvious data entry mistakes (n.b., there are several more data entry mistakes in this field that would need manual correction, but that is beyond the scope of this analysis).
+
 
 ```r
 tdata = data %>%
-  select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
-  mutate(EVTYPE = toupper(str_trim(EVTYPE))) %>%
-  print
+  select(EVTYPE, BGN_DATE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
+  mutate(EVTYPE = as.factor(toupper(str_trim(EVTYPE))), BGN_DATE = year(mdy_hms(BGN_DATE)))
 ```
 
-```
-## Source: local data frame [902,297 x 7]
-## 
-##     EVTYPE FATALITIES INJURIES PROPDMG PROPDMGEXP CROPDMG CROPDMGEXP
-## 1  TORNADO          0       15    25.0          K       0           
-## 2  TORNADO          0        0     2.5          K       0           
-## 3  TORNADO          0        2    25.0          K       0           
-## 4  TORNADO          0        2     2.5          K       0           
-## 5  TORNADO          0        2     2.5          K       0           
-## 6  TORNADO          0        6     2.5          K       0           
-## 7  TORNADO          0        1     2.5          K       0           
-## 8  TORNADO          0        0     2.5          K       0           
-## 9  TORNADO          1       14    25.0          K       0           
-## 10 TORNADO          0        0    25.0          K       0           
-## ..     ...        ...      ...     ...        ...     ...        ...
+To further tidy the data, we only include severe weather events recorded after 1995 because all 48 standardized event types were recorded as defined in NWS Directive 10-1605 only from 1996 to present (click [here](http://www.ncdc.noaa.gov/stormevents/details.jsp) for more information)). This minimizes the bias due to limited data being collect in previous years and the effect of inflation on the cost of the damage due to the events.
+
+
+```r
+tdata %<>% filter(BGN_DATE > 1995)
 ```
 
-To further tidy the data, we generate a new PROPDMGVAL variable (from the PROPDMG and PROPDMGEXP variables) which contains the property damage value in standard notation (as opposed to the original scientific notation).
+To further tidy the data, we generate a new PROPDMGAMNT variable (from the PROPDMG and PROPDMGEXP variables) which contains the property damage amount (USD) in standard notation (as opposed to the original scientific notation).
 
 
 ```r
@@ -74,35 +67,21 @@ unique(tdata$PROPDMGEXP)
 ```
 
 ```
-##  [1] K M   B m + 0 5 6 ? 4 2 3 h 7 H - 1 8
+## [1] K   M B 0
 ## Levels:  - ? + 0 1 2 3 4 5 6 7 8 B h H K m M
 ```
 
 ```r
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "K"] = 1000
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "M"] = 1e+06
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == ""] = 1
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "B"] = 1e+09
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "m"] = 1e+06
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "0"] = 1
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "5"] = 1e+05
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "6"] = 1e+06
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "4"] = 10000
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "2"] = 100
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "3"] = 1000
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "h"] = 100
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "7"] = 1e+07
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "H"] = 100
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "1"] = 10
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "8"] = 1e+08
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "+"] = 0
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "-"] = 0
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "?"] = 0
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "K"] = 1000
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "M"] = 1e+06
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == ""] = 1
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "B"] = 1e+09
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "0"] = 1
 
-tdata %<>% mutate (PROPDMGVAL = PROPDMG * PROPDMGCONV)
+tdata %<>% mutate (PROPDMGAMNT = PROPDMG * PROPDMGMULT)
 ```
 
-To further tidy the data, we generate a new CROPDMGVAL variable (from the CROPDMG and CROPDMGEXP variables) which contains the crop damage value in standard notation (as opposed to the original scientific notation).
+To further tidy the data, we generate a new CROPDMGAMNT variable (from the CROPDMG and CROPDMGEXP variables) which contains the crop damage amount (USD) in standard notation (as opposed to the original scientific notation).
 
 
 ```r
@@ -110,22 +89,80 @@ unique(tdata$CROPDMGEXP)
 ```
 
 ```
-## [1]   M K m B ? 0 k 2
+## [1] K   M B
 ## Levels:  ? 0 2 B k K m M
 ```
 
 ```r
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "M"] = 1e+06
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "K"] = 1000
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "m"] = 1e+06
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "B"] = 1e+09
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "0"] = 1
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "k"] = 1000
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "2"] = 100
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == ""] = 1
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "?"] = 0
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "K"] = 1000
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "M"] = 1e+06
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == ""] = 1
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "B"] = 1e+09
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "0"] = 1
 
-tdata %<>% mutate (CROPDMGVAL = CROPDMG * CROPDMGCONV)
+tdata %<>% mutate (CROPDMGAMNT = CROPDMG * CROPDMGMULT)
+```
+
+Here is how the data look like after tidying them up.
+
+
+```r
+str(tdata)
+```
+
+```
+## Classes 'tbl_df', 'tbl' and 'data.frame':	653530 obs. of  12 variables:
+##  $ EVTYPE     : Factor w/ 890 levels "?","ABNORMAL WARMTH",..: 880 750 771 771 771 204 312 771 771 771 ...
+##  $ BGN_DATE   : num  1996 1996 1996 1996 1996 ...
+##  $ FATALITIES : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ INJURIES   : num  0 0 0 0 0 0 0 0 0 0 ...
+##  $ PROPDMG    : num  380 100 3 5 2 0 400 12 8 12 ...
+##  $ PROPDMGEXP : Factor w/ 19 levels "","-","?","+",..: 17 17 17 17 17 1 17 17 17 17 ...
+##  $ CROPDMG    : num  38 0 0 0 0 0 0 0 0 0 ...
+##  $ CROPDMGEXP : Factor w/ 9 levels "","?","0","2",..: 7 1 1 1 1 1 1 1 1 1 ...
+##  $ PROPDMGMULT: num  1000 1000 1000 1000 1000 1 1000 1000 1000 1000 ...
+##  $ PROPDMGAMNT: num  380000 100000 3000 5000 2000 0 400000 12000 8000 12000 ...
+##  $ CROPDMGMULT: num  1000 1 1 1 1 1 1 1 1 1 ...
+##  $ CROPDMGAMNT: num  38000 0 0 0 0 0 0 0 0 0 ...
+```
+
+```r
+summary(tdata)
+```
+
+```
+##                EVTYPE          BGN_DATE      FATALITIES     INJURIES   
+##  HAIL             :207715   Min.   :1996   Min.   :  0   Min.   :   0  
+##  TSTM WIND        :128668   1st Qu.:2000   1st Qu.:  0   1st Qu.:   0  
+##  THUNDERSTORM WIND: 81403   Median :2005   Median :  0   Median :   0  
+##  FLASH FLOOD      : 51000   Mean   :2004   Mean   :  0   Mean   :   0  
+##  FLOOD            : 24248   3rd Qu.:2008   3rd Qu.:  0   3rd Qu.:   0  
+##  TORNADO          : 23154   Max.   :2011   Max.   :158   Max.   :1150  
+##  (Other)          :137342                                              
+##     PROPDMG       PROPDMGEXP        CROPDMG      CROPDMGEXP    
+##  Min.   :   0   K      :369938   Min.   :  0          :373069  
+##  1st Qu.:   0          :276185   1st Qu.:  0   K      :278686  
+##  Median :   0   M      :  7374   Median :  0   M      :  1771  
+##  Mean   :  12   B      :    32   Mean   :  2   B      :     4  
+##  3rd Qu.:   1   0      :     1   3rd Qu.:  0   ?      :     0  
+##  Max.   :5000   -      :     0   Max.   :990   0      :     0  
+##                 (Other):     0                 (Other):     0  
+##   PROPDMGMULT        PROPDMGAMNT        CROPDMGMULT      
+##  Min.   :1.00e+00   Min.   :0.00e+00   Min.   :1.00e+00  
+##  1st Qu.:1.00e+00   1st Qu.:0.00e+00   1st Qu.:1.00e+00  
+##  Median :1.00e+03   Median :0.00e+00   Median :1.00e+00  
+##  Mean   :6.08e+04   Mean   :5.61e+05   Mean   :9.26e+03  
+##  3rd Qu.:1.00e+03   3rd Qu.:1.25e+03   3rd Qu.:1.00e+03  
+##  Max.   :1.00e+09   Max.   :1.15e+11   Max.   :1.00e+09  
+##                                                          
+##   CROPDMGAMNT      
+##  Min.   :0.00e+00  
+##  1st Qu.:0.00e+00  
+##  Median :0.00e+00  
+##  Mean   :5.32e+04  
+##  3rd Qu.:0.00e+00  
+##  Max.   :1.51e+09  
+## 
 ```
 
 ## Results
@@ -137,8 +174,64 @@ Finally, we summarise the data by event type and report the sum of fatalities an
 tdata.summary = tdata %>%
   group_by(EVTYPE) %>%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
-            PROP_AND_CROP_DAMAGES = sum(PROPDMGVAL) + sum(CROPDMGVAL))
+            PROP_AND_CROP_DAMAGES = sum(PROPDMGAMNT) + sum(CROPDMGAMNT))
+
+
+
+tdata.summary.by_evtype_and_bgn_date = tdata %>%
+  group_by(BGN_DATE) %>%
+  summarise(FATALITIES = sum(FATALITIES),
+            INJURIES = sum(INJURIES),
+            PROPDMGAMNT = sum(PROPDMGAMNT),
+            CROPDMGAMNT = sum(CROPDMGAMNT)) %>%
+  print
 ```
+
+```
+## Source: local data frame [16 x 5]
+## 
+##    BGN_DATE FATALITIES INJURIES PROPDMGAMNT CROPDMGAMNT
+## 1      1996        542     2717     6.1e+09     1.9e+09
+## 2      1997        601     3800     9.6e+09     1.2e+09
+## 3      1998        687    11177     1.2e+10     4.5e+09
+## 4      1999        908     5148     8.7e+09     3.5e+09
+## 5      2000        477     2803     5.6e+09     3.3e+09
+## 6      2001        469     2721     1.0e+10     1.8e+09
+## 7      2002        498     3155     4.1e+09     1.4e+09
+## 8      2003        443     2931     1.0e+10     1.1e+09
+## 9      2004        370     2426     2.5e+10     1.5e+09
+## 10     2005        469     1834     9.7e+10     4.0e+09
+## 11     2006        599     3368     1.2e+11     3.5e+09
+## 12     2007        421     2191     5.8e+09     1.7e+09
+## 13     2008        488     2703     1.6e+10     2.2e+09
+## 14     2009        333     1354     5.2e+09     5.2e+08
+## 15     2010        425     1855     9.2e+09     1.8e+09
+## 16     2011       1002     7792     2.1e+10     6.7e+08
+```
+
+```r
+plot(FATALITIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+```
+
+![](PA2_template_files/figure-html/unnamed-chunk-8-1.png) 
+
+```r
+plot(INJURIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+```
+
+![](PA2_template_files/figure-html/unnamed-chunk-8-2.png) 
+
+```r
+plot(PROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+```
+
+![](PA2_template_files/figure-html/unnamed-chunk-8-3.png) 
+
+```r
+plot(CROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+```
+
+![](PA2_template_files/figure-html/unnamed-chunk-8-4.png) 
 
 ### Top 10 types of severe weather events most hazardous to the US population
 
@@ -151,19 +244,19 @@ tdata.summary.fatalities_and_injuries = tdata.summary %>%
 ```
 
 ```
-## Source: local data frame [890 x 2]
+## Source: local data frame [430 x 2]
 ## 
 ##               EVTYPE FATALITIES_AND_INJURIES
-## 1            TORNADO                   96979
-## 2     EXCESSIVE HEAT                    8428
-## 3          TSTM WIND                    7461
-## 4              FLOOD                    7259
-## 5          LIGHTNING                    6046
-## 6               HEAT                    3037
-## 7        FLASH FLOOD                    2755
-## 8          ICE STORM                    2064
-## 9  THUNDERSTORM WIND                    1621
-## 10      WINTER STORM                    1527
+## 1            TORNADO                   22178
+## 2     EXCESSIVE HEAT                    8188
+## 3              FLOOD                    7172
+## 4          LIGHTNING                    4792
+## 5          TSTM WIND                    3870
+## 6        FLASH FLOOD                    2561
+## 7  THUNDERSTORM WIND                    1530
+## 8       WINTER STORM                    1483
+## 9               HEAT                    1459
+## 10 HURRICANE/TYPHOON                    1339
 ## ..               ...                     ...
 ```
 
@@ -177,7 +270,7 @@ ggplot(data = tdata.summary.fatalities_and_injuries[1:10,], aes(x = reorder(EVTY
   theme(axis.text.x = element_text(angle=45, hjust=1))
 ```
 
-![](PA2_template_files/figure-html/unnamed-chunk-7-1.png) 
+![](PA2_template_files/figure-html/unnamed-chunk-9-1.png) 
 
 ### Top 10 types of severe weather events most damaging to the US economy
 
@@ -190,19 +283,19 @@ tdata.summary.prop_and_crop_damages = tdata.summary %>%
 ```
 
 ```
-## Source: local data frame [890 x 2]
+## Source: local data frame [430 x 2]
 ## 
 ##               EVTYPE PROP_AND_CROP_DAMAGES
 ## 1              FLOOD               1.5e+11
 ## 2  HURRICANE/TYPHOON               7.2e+10
-## 3            TORNADO               5.7e+10
-## 4        STORM SURGE               4.3e+10
-## 5               HAIL               1.9e+10
-## 6        FLASH FLOOD               1.8e+10
-## 7            DROUGHT               1.5e+10
-## 8          HURRICANE               1.5e+10
-## 9        RIVER FLOOD               1.0e+10
-## 10         ICE STORM               9.0e+09
+## 3        STORM SURGE               4.3e+10
+## 4            TORNADO               2.5e+10
+## 5               HAIL               1.7e+10
+## 6        FLASH FLOOD               1.7e+10
+## 7          HURRICANE               1.5e+10
+## 8            DROUGHT               1.4e+10
+## 9     TROPICAL STORM               8.3e+09
+## 10         HIGH WIND               5.9e+09
 ## ..               ...                   ...
 ```
 
@@ -216,7 +309,7 @@ ggplot(data = tdata.summary.prop_and_crop_damages[1:10,], aes(x = reorder(EVTYPE
   theme(axis.text.x = element_text(angle=45, hjust=1))
 ```
 
-![](PA2_template_files/figure-html/unnamed-chunk-8-1.png) 
+![](PA2_template_files/figure-html/unnamed-chunk-10-1.png) 
 
 ## Compute environment
 
@@ -237,13 +330,15 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] ggplot2_1.0.0 stringr_0.6.2 magrittr_1.5  dplyr_0.4.1  
+## [1] ggplot2_1.0.0   lubridate_1.3.3 stringr_0.6.2   magrittr_1.5   
+## [5] dplyr_0.4.1    
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] assertthat_0.1   colorspace_1.2-5 DBI_0.3.1        digest_0.6.8    
 ##  [5] evaluate_0.5.5   formatR_1.0      grid_3.1.3       gtable_0.1.2    
 ##  [9] htmltools_0.2.6  knitr_1.9        labeling_0.3     lazyeval_0.1.10 
-## [13] MASS_7.3-39      munsell_0.4.2    parallel_3.1.3   plyr_1.8.1      
-## [17] proto_0.3-10     Rcpp_0.11.5      reshape2_1.4.1   rmarkdown_0.5.1 
-## [21] scales_0.2.4     tcltk_3.1.3      tools_3.1.3      yaml_2.1.13
+## [13] MASS_7.3-39      memoise_0.2.1    munsell_0.4.2    parallel_3.1.3  
+## [17] plyr_1.8.1       proto_0.3-10     Rcpp_0.11.5      reshape2_1.4.1  
+## [21] rmarkdown_0.5.1  scales_0.2.4     tcltk_3.1.3      tools_3.1.3     
+## [25] yaml_2.1.13
 ```

@@ -12,7 +12,7 @@ In the following report, we present an analysis of the [NOAA Storm Events Databa
 - Which types of severe weather events are the most hazardous to the US population?
 - Which types of severe weather events are the most damaging to the US economy?
 
-By aggregating the records by event type, we generate summary tables and the corresponding barcharts for the top 10 types of severe weather events with the most negative impact on the US population (fatalities and injuries) and economy (property and crop damages). Overall, tornadoes are the most hazardous to the US population (with 96,979 fatalities and injuries). On the other hand, floods are the most damaging to the US economy (with $150B of property and crop damages).
+By aggregating the records by event type, we generate summary tables and the corresponding barcharts for the top 10 types of severe weather events with the most negative impact on the US population (fatalities and injuries) and economy (property and crop damages). In conclusion, tornadoes are the most hazardous to the US population and floods are the most damaging to the US economy.
 
 ## Data processing
 
@@ -22,6 +22,7 @@ First, we load the required packages and set some global options.
 library(dplyr)
 library(magrittr)
 library(stringr)
+library(lubridate)
 library(ggplot2)
 
 options(scipen = 1, digits = 2)
@@ -34,9 +35,10 @@ data = read.csv(bzfile("repdata-data-StormData.csv.bz2"))
 data = tbl_df(data)
 ```
 
-Then, we tidy the data by selecting, for each recorded severe weather event, only the variables needed for our analysis:
+Then, we tidy the data by selecting, for each recorded severe weather event, only the variables needed for this analysis:
 
 - EVTYPE = type of severe weather event
+- BGN_DATE = beginning date of severe weather event
 - FATALITIES = number of fatalities caused by the severe weather event
 - INJURIES = number of injuries caused by the severe weather event
 - PROPDMG = scientific notation coefficient of the property damage value caused by the severe weather event
@@ -44,57 +46,54 @@ Then, we tidy the data by selecting, for each recorded severe weather event, onl
 - CROPDMG = scientific notation coefficient of the crop damage value caused by the severe weather event
 - CROPDMGEXP = scientific notation exponent of the crop damage value caused by the severe weather event
 
+In addition, we transform the BGN_DATE variable to only include the year of the severe weather event and we strip+uppercase the EVTYPE variable to correct for the most obvious data entry mistakes (n.b., there are several more data entry mistakes in this field that would need manual correction, but that is beyond the scope of this analysis).
+
 ```{r}
 tdata = data %>%
-  select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
-  mutate(EVTYPE = toupper(str_trim(EVTYPE))) %>%
-  print
+  select(EVTYPE, BGN_DATE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
+  mutate(EVTYPE = as.factor(toupper(str_trim(EVTYPE))), BGN_DATE = year(mdy_hms(BGN_DATE)))
 ```
 
-To further tidy the data, we generate a new PROPDMGVAL variable (from the PROPDMG and PROPDMGEXP variables) which contains the property damage value in standard notation (as opposed to the original scientific notation).
+To further tidy the data, we only include severe weather events recorded after 1995 because all 48 standardized event types were recorded as defined in NWS Directive 10-1605 only from 1996 to present (click [here](http://www.ncdc.noaa.gov/stormevents/details.jsp) for more information)). This minimizes the bias due to limited data being collect in previous years and the effect of inflation on the cost of the damage due to the events.
+
+```{r}
+tdata %<>% filter(BGN_DATE > 1995)
+```
+
+To further tidy the data, we generate a new PROPDMGAMNT variable (from the PROPDMG and PROPDMGEXP variables) which contains the property damage amount (USD) in standard notation (as opposed to the original scientific notation).
 
 ```{r}
 unique(tdata$PROPDMGEXP)
 
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "K"] = 1000
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "M"] = 1e+06
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == ""] = 1
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "B"] = 1e+09
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "m"] = 1e+06
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "0"] = 1
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "5"] = 1e+05
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "6"] = 1e+06
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "4"] = 10000
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "2"] = 100
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "3"] = 1000
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "h"] = 100
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "7"] = 1e+07
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "H"] = 100
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "1"] = 10
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "8"] = 1e+08
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "+"] = 0
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "-"] = 0
-tdata$PROPDMGCONV[tdata$PROPDMGEXP == "?"] = 0
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "K"] = 1000
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "M"] = 1e+06
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == ""] = 1
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "B"] = 1e+09
+tdata$PROPDMGMULT[tdata$PROPDMGEXP == "0"] = 1
 
-tdata %<>% mutate (PROPDMGVAL = PROPDMG * PROPDMGCONV)
+tdata %<>% mutate (PROPDMGAMNT = PROPDMG * PROPDMGMULT)
 ```
 
-To further tidy the data, we generate a new CROPDMGVAL variable (from the CROPDMG and CROPDMGEXP variables) which contains the crop damage value in standard notation (as opposed to the original scientific notation).
+To further tidy the data, we generate a new CROPDMGAMNT variable (from the CROPDMG and CROPDMGEXP variables) which contains the crop damage amount (USD) in standard notation (as opposed to the original scientific notation).
 
 ```{r}
 unique(tdata$CROPDMGEXP)
 
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "M"] = 1e+06
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "K"] = 1000
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "m"] = 1e+06
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "B"] = 1e+09
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "0"] = 1
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "k"] = 1000
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "2"] = 100
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == ""] = 1
-tdata$CROPDMGCONV[tdata$CROPDMGEXP == "?"] = 0
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "K"] = 1000
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "M"] = 1e+06
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == ""] = 1
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "B"] = 1e+09
+tdata$CROPDMGMULT[tdata$CROPDMGEXP == "0"] = 1
 
-tdata %<>% mutate (CROPDMGVAL = CROPDMG * CROPDMGCONV)
+tdata %<>% mutate (CROPDMGAMNT = CROPDMG * CROPDMGMULT)
+```
+
+Here is how the data look like after tidying them up.
+
+```{r}
+str(tdata)
+
+summary(tdata)
 ```
 
 ## Results
@@ -105,7 +104,23 @@ Finally, we summarise the data by event type and report the sum of fatalities an
 tdata.summary = tdata %>%
   group_by(EVTYPE) %>%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
-            PROP_AND_CROP_DAMAGES = sum(PROPDMGVAL) + sum(CROPDMGVAL))
+            PROP_AND_CROP_DAMAGES = sum(PROPDMGAMNT) + sum(CROPDMGAMNT))
+
+
+
+tdata.summary.by_evtype_and_bgn_date = tdata %>%
+  group_by(BGN_DATE) %>%
+  summarise(FATALITIES = sum(FATALITIES),
+            INJURIES = sum(INJURIES),
+            PROPDMGAMNT = sum(PROPDMGAMNT),
+            CROPDMGAMNT = sum(CROPDMGAMNT)) %>%
+  print
+
+plot(FATALITIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+plot(INJURIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+plot(PROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+plot(CROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
+
 ```
 
 ### Top 10 types of severe weather events most hazardous to the US population
