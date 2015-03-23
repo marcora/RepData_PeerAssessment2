@@ -7,7 +7,7 @@ output:
 
 ## Synopsis
 
-In the following report we present an analysis of the [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/). The raw data consist of 902,297 severe weather events recorded from 1950 to 2011 in the United States. The goal of this analysis is to assess the negative impact of severe weather events on the US population and economy. Namely, we attempt to answer the following questions:
+In the following report, we present an analysis of the [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/). The raw data consist of 902,297 severe weather events recorded from 1950 to 2011 in the United States. The goal of this analysis is to assess the negative impact of severe weather events on the US population and economy. Namely, we attempt to answer the following questions:
 
 - Which types of severe weather events are the most hazardous to the US population?
 - Which types of severe weather events are the most damaging to the US economy?
@@ -104,7 +104,7 @@ Finally, we summarise the data by event type and report the sum of fatalities an
 tdata.summary = tdata %>%
   group_by(EVTYPE) %>%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
-            PROP_AND_CROP_DAMAGE = sum(PROPDMGVAL) + sum(CROPDMGVAL))
+            PROP_AND_CROP_DAMAGES = sum(PROPDMGVAL) + sum(CROPDMGVAL))
 ```
 
 ### Top 10 types of severe weather events most hazardous to the US population
@@ -127,12 +127,12 @@ ggplot(data = tdata.summary.fatalities_and_injuries[1:10,], aes(x = reorder(EVTY
 ### Top 10 types of severe weather events most damaging to the US economy
 
 ```{r}
-tdata.summary.prop_and_crop_damage = tdata.summary %>%
-  arrange(desc(PROP_AND_CROP_DAMAGE)) %>%
-  select(EVTYPE, PROP_AND_CROP_DAMAGE) %>%
+tdata.summary.prop_and_crop_damages = tdata.summary %>%
+  arrange(desc(PROP_AND_CROP_DAMAGES)) %>%
+  select(EVTYPE, PROP_AND_CROP_DAMAGES) %>%
   print
 
-ggplot(data = tdata.summary.prop_and_crop_damage[1:10,], aes(x = reorder(EVTYPE, -PROP_AND_CROP_DAMAGE), y = PROP_AND_CROP_DAMAGE)) +
+ggplot(data = tdata.summary.prop_and_crop_damages[1:10,], aes(x = reorder(EVTYPE, -PROP_AND_CROP_DAMAGES), y = PROP_AND_CROP_DAMAGES)) +
   geom_bar(stat = "identity") +
   ggtitle("DAMAGE TO US ECONOMY (PROPERTY AND CROP DAMAGES)") +
   xlab("EVENT TYPE") +

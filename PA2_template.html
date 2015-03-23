@@ -66,7 +66,7 @@ img {
 
 <div id="synopsis" class="section level2">
 <h2>Synopsis</h2>
-<p>In the following report we present an analysis of the <a href="https://www.ncdc.noaa.gov/stormevents/">NOAA Storm Events Database</a>. The raw data consist of 902,297 severe weather events recorded from 1950 to 2011 in the United States. The goal of this analysis is to assess the negative impact of severe weather events on the US population and economy. Namely, we attempt to answer the following questions:</p>
+<p>In the following report, we present an analysis of the <a href="https://www.ncdc.noaa.gov/stormevents/">NOAA Storm Events Database</a>. The raw data consist of 902,297 severe weather events recorded from 1950 to 2011 in the United States. The goal of this analysis is to assess the negative impact of severe weather events on the US population and economy. Namely, we attempt to answer the following questions:</p>
 <ul>
 <li>Which types of severe weather events are the most hazardous to the US population?</li>
 <li>Which types of severe weather events are the most damaging to the US economy?</li>
@@ -159,7 +159,7 @@ tdata %&lt;&gt;% mutate (CROPDMGVAL = CROPDMG * CROPDMGCONV)</code></pre>
 <pre class="r"><code>tdata.summary = tdata %&gt;%
   group_by(EVTYPE) %&gt;%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
-            PROP_AND_CROP_DAMAGE = sum(PROPDMGVAL) + sum(CROPDMGVAL))</code></pre>
+            PROP_AND_CROP_DAMAGES = sum(PROPDMGVAL) + sum(CROPDMGVAL))</code></pre>
 <div id="top-10-types-of-severe-weather-events-most-hazardous-to-the-us-population" class="section level3">
 <h3>Top 10 types of severe weather events most hazardous to the US population</h3>
 <pre class="r"><code>tdata.summary.fatalities_and_injuries = tdata.summary %&gt;%
@@ -191,25 +191,25 @@ tdata %&lt;&gt;% mutate (CROPDMGVAL = CROPDMG * CROPDMGCONV)</code></pre>
 </div>
 <div id="top-10-types-of-severe-weather-events-most-damaging-to-the-us-economy" class="section level3">
 <h3>Top 10 types of severe weather events most damaging to the US economy</h3>
-<pre class="r"><code>tdata.summary.prop_and_crop_damage = tdata.summary %&gt;%
-  arrange(desc(PROP_AND_CROP_DAMAGE)) %&gt;%
-  select(EVTYPE, PROP_AND_CROP_DAMAGE) %&gt;%
+<pre class="r"><code>tdata.summary.prop_and_crop_damages = tdata.summary %&gt;%
+  arrange(desc(PROP_AND_CROP_DAMAGES)) %&gt;%
+  select(EVTYPE, PROP_AND_CROP_DAMAGES) %&gt;%
   print</code></pre>
 <pre><code>## Source: local data frame [898 x 2]
 ## 
-##               EVTYPE PROP_AND_CROP_DAMAGE
-## 1              FLOOD              1.5e+11
-## 2  HURRICANE/TYPHOON              7.2e+10
-## 3            TORNADO              5.7e+10
-## 4        STORM SURGE              4.3e+10
-## 5               HAIL              1.9e+10
-## 6        FLASH FLOOD              1.8e+10
-## 7            DROUGHT              1.5e+10
-## 8          HURRICANE              1.5e+10
-## 9        RIVER FLOOD              1.0e+10
-## 10         ICE STORM              9.0e+09
-## ..               ...                  ...</code></pre>
-<pre class="r"><code>ggplot(data = tdata.summary.prop_and_crop_damage[1:10,], aes(x = reorder(EVTYPE, -PROP_AND_CROP_DAMAGE), y = PROP_AND_CROP_DAMAGE)) +
+##               EVTYPE PROP_AND_CROP_DAMAGES
+## 1              FLOOD               1.5e+11
+## 2  HURRICANE/TYPHOON               7.2e+10
+## 3            TORNADO               5.7e+10
+## 4        STORM SURGE               4.3e+10
+## 5               HAIL               1.9e+10
+## 6        FLASH FLOOD               1.8e+10
+## 7            DROUGHT               1.5e+10
+## 8          HURRICANE               1.5e+10
+## 9        RIVER FLOOD               1.0e+10
+## 10         ICE STORM               9.0e+09
+## ..               ...                   ...</code></pre>
+<pre class="r"><code>ggplot(data = tdata.summary.prop_and_crop_damages[1:10,], aes(x = reorder(EVTYPE, -PROP_AND_CROP_DAMAGES), y = PROP_AND_CROP_DAMAGES)) +
   geom_bar(stat = &quot;identity&quot;) +
   ggtitle(&quot;DAMAGE TO US ECONOMY (PROPERTY AND CROP DAMAGES)&quot;) +
   xlab(&quot;EVENT TYPE&quot;) +

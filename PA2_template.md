@@ -2,7 +2,7 @@
 
 ## Synopsis
 
-In the following report we present an analysis of the [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/). The raw data consist of 902,297 severe weather events recorded from 1950 to 2011 in the United States. The goal of this analysis is to assess the negative impact of severe weather events on the US population and economy. Namely, we attempt to answer the following questions:
+In the following report, we present an analysis of the [NOAA Storm Events Database](https://www.ncdc.noaa.gov/stormevents/). The raw data consist of 902,297 severe weather events recorded from 1950 to 2011 in the United States. The goal of this analysis is to assess the negative impact of severe weather events on the US population and economy. Namely, we attempt to answer the following questions:
 
 - Which types of severe weather events are the most hazardous to the US population?
 - Which types of severe weather events are the most damaging to the US economy?
@@ -136,7 +136,7 @@ Finally, we summarise the data by event type and report the sum of fatalities an
 tdata.summary = tdata %>%
   group_by(EVTYPE) %>%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
-            PROP_AND_CROP_DAMAGE = sum(PROPDMGVAL) + sum(CROPDMGVAL))
+            PROP_AND_CROP_DAMAGES = sum(PROPDMGVAL) + sum(CROPDMGVAL))
 ```
 
 ### Top 10 types of severe weather events most hazardous to the US population
@@ -182,31 +182,31 @@ ggplot(data = tdata.summary.fatalities_and_injuries[1:10,], aes(x = reorder(EVTY
 
 
 ```r
-tdata.summary.prop_and_crop_damage = tdata.summary %>%
-  arrange(desc(PROP_AND_CROP_DAMAGE)) %>%
-  select(EVTYPE, PROP_AND_CROP_DAMAGE) %>%
+tdata.summary.prop_and_crop_damages = tdata.summary %>%
+  arrange(desc(PROP_AND_CROP_DAMAGES)) %>%
+  select(EVTYPE, PROP_AND_CROP_DAMAGES) %>%
   print
 ```
 
 ```
 ## Source: local data frame [898 x 2]
 ## 
-##               EVTYPE PROP_AND_CROP_DAMAGE
-## 1              FLOOD              1.5e+11
-## 2  HURRICANE/TYPHOON              7.2e+10
-## 3            TORNADO              5.7e+10
-## 4        STORM SURGE              4.3e+10
-## 5               HAIL              1.9e+10
-## 6        FLASH FLOOD              1.8e+10
-## 7            DROUGHT              1.5e+10
-## 8          HURRICANE              1.5e+10
-## 9        RIVER FLOOD              1.0e+10
-## 10         ICE STORM              9.0e+09
-## ..               ...                  ...
+##               EVTYPE PROP_AND_CROP_DAMAGES
+## 1              FLOOD               1.5e+11
+## 2  HURRICANE/TYPHOON               7.2e+10
+## 3            TORNADO               5.7e+10
+## 4        STORM SURGE               4.3e+10
+## 5               HAIL               1.9e+10
+## 6        FLASH FLOOD               1.8e+10
+## 7            DROUGHT               1.5e+10
+## 8          HURRICANE               1.5e+10
+## 9        RIVER FLOOD               1.0e+10
+## 10         ICE STORM               9.0e+09
+## ..               ...                   ...
 ```
 
 ```r
-ggplot(data = tdata.summary.prop_and_crop_damage[1:10,], aes(x = reorder(EVTYPE, -PROP_AND_CROP_DAMAGE), y = PROP_AND_CROP_DAMAGE)) +
+ggplot(data = tdata.summary.prop_and_crop_damages[1:10,], aes(x = reorder(EVTYPE, -PROP_AND_CROP_DAMAGES), y = PROP_AND_CROP_DAMAGES)) +
   geom_bar(stat = "identity") +
   ggtitle("DAMAGE TO US ECONOMY (PROPERTY AND CROP DAMAGES)") +
   xlab("EVENT TYPE") +
