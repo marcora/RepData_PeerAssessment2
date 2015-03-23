@@ -17,6 +17,7 @@ First, we load the required packages and set some global options.
 ```r
 library(dplyr)
 library(magrittr)
+library(stringr)
 library(ggplot2)
 
 options(scipen = 1, digits = 2)
@@ -44,7 +45,7 @@ Then, we tidy the data by selecting, for each recorded severe weather event, onl
 ```r
 tdata = data %>%
   select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
-  mutate(EVTYPE = toupper(EVTYPE)) %>%
+  mutate(EVTYPE = toupper(str_trim(EVTYPE))) %>%
   print
 ```
 
@@ -150,7 +151,7 @@ tdata.summary.fatalities_and_injuries = tdata.summary %>%
 ```
 
 ```
-## Source: local data frame [898 x 2]
+## Source: local data frame [890 x 2]
 ## 
 ##               EVTYPE FATALITIES_AND_INJURIES
 ## 1            TORNADO                   96979
@@ -189,7 +190,7 @@ tdata.summary.prop_and_crop_damages = tdata.summary %>%
 ```
 
 ```
-## Source: local data frame [898 x 2]
+## Source: local data frame [890 x 2]
 ## 
 ##               EVTYPE PROP_AND_CROP_DAMAGES
 ## 1              FLOOD               1.5e+11
@@ -236,7 +237,7 @@ sessionInfo()
 ## [1] stats     graphics  grDevices utils     datasets  methods   base     
 ## 
 ## other attached packages:
-## [1] ggplot2_1.0.0 magrittr_1.5  dplyr_0.4.1  
+## [1] ggplot2_1.0.0 stringr_0.6.2 magrittr_1.5  dplyr_0.4.1  
 ## 
 ## loaded via a namespace (and not attached):
 ##  [1] assertthat_0.1   colorspace_1.2-5 DBI_0.3.1        digest_0.6.8    
@@ -244,6 +245,5 @@ sessionInfo()
 ##  [9] htmltools_0.2.6  knitr_1.9        labeling_0.3     lazyeval_0.1.10 
 ## [13] MASS_7.3-39      munsell_0.4.2    parallel_3.1.3   plyr_1.8.1      
 ## [17] proto_0.3-10     Rcpp_0.11.5      reshape2_1.4.1   rmarkdown_0.5.1 
-## [21] scales_0.2.4     stringr_0.6.2    tcltk_3.1.3      tools_3.1.3     
-## [25] yaml_2.1.13
+## [21] scales_0.2.4     tcltk_3.1.3      tools_3.1.3      yaml_2.1.13
 ```

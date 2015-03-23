@@ -21,6 +21,7 @@ First, we load the required packages and set some global options.
 ```{r, message = FALSE, warning = FALSE}
 library(dplyr)
 library(magrittr)
+library(stringr)
 library(ggplot2)
 
 options(scipen = 1, digits = 2)
@@ -46,7 +47,7 @@ Then, we tidy the data by selecting, for each recorded severe weather event, onl
 ```{r}
 tdata = data %>%
   select(EVTYPE, FATALITIES, INJURIES, PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
-  mutate(EVTYPE = toupper(EVTYPE)) %>%
+  mutate(EVTYPE = toupper(str_trim(EVTYPE))) %>%
   print
 ```
 
