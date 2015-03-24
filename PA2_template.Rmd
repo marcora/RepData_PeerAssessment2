@@ -92,8 +92,6 @@ Here is how the data look like after tidying them up.
 
 ```{r}
 str(tdata)
-
-summary(tdata)
 ```
 
 ## Results
@@ -105,22 +103,6 @@ tdata.summary = tdata %>%
   group_by(EVTYPE) %>%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
             PROP_AND_CROP_DAMAGES = sum(PROPDMGAMNT) + sum(CROPDMGAMNT))
-
-
-
-tdata.summary.by_evtype_and_bgn_date = tdata %>%
-  group_by(BGN_DATE) %>%
-  summarise(FATALITIES = sum(FATALITIES),
-            INJURIES = sum(INJURIES),
-            PROPDMGAMNT = sum(PROPDMGAMNT),
-            CROPDMGAMNT = sum(CROPDMGAMNT)) %>%
-  print
-
-plot(FATALITIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-plot(INJURIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-plot(PROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-plot(CROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-
 ```
 
 ### Top 10 types of severe weather events most hazardous to the US population

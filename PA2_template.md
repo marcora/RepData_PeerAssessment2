@@ -126,45 +126,6 @@ str(tdata)
 ##  $ CROPDMGAMNT: num  38000 0 0 0 0 0 0 0 0 0 ...
 ```
 
-```r
-summary(tdata)
-```
-
-```
-##                EVTYPE          BGN_DATE      FATALITIES     INJURIES   
-##  HAIL             :207715   Min.   :1996   Min.   :  0   Min.   :   0  
-##  TSTM WIND        :128668   1st Qu.:2000   1st Qu.:  0   1st Qu.:   0  
-##  THUNDERSTORM WIND: 81403   Median :2005   Median :  0   Median :   0  
-##  FLASH FLOOD      : 51000   Mean   :2004   Mean   :  0   Mean   :   0  
-##  FLOOD            : 24248   3rd Qu.:2008   3rd Qu.:  0   3rd Qu.:   0  
-##  TORNADO          : 23154   Max.   :2011   Max.   :158   Max.   :1150  
-##  (Other)          :137342                                              
-##     PROPDMG       PROPDMGEXP        CROPDMG      CROPDMGEXP    
-##  Min.   :   0   K      :369938   Min.   :  0          :373069  
-##  1st Qu.:   0          :276185   1st Qu.:  0   K      :278686  
-##  Median :   0   M      :  7374   Median :  0   M      :  1771  
-##  Mean   :  12   B      :    32   Mean   :  2   B      :     4  
-##  3rd Qu.:   1   0      :     1   3rd Qu.:  0   ?      :     0  
-##  Max.   :5000   -      :     0   Max.   :990   0      :     0  
-##                 (Other):     0                 (Other):     0  
-##   PROPDMGMULT        PROPDMGAMNT        CROPDMGMULT      
-##  Min.   :1.00e+00   Min.   :0.00e+00   Min.   :1.00e+00  
-##  1st Qu.:1.00e+00   1st Qu.:0.00e+00   1st Qu.:1.00e+00  
-##  Median :1.00e+03   Median :0.00e+00   Median :1.00e+00  
-##  Mean   :6.08e+04   Mean   :5.61e+05   Mean   :9.26e+03  
-##  3rd Qu.:1.00e+03   3rd Qu.:1.25e+03   3rd Qu.:1.00e+03  
-##  Max.   :1.00e+09   Max.   :1.15e+11   Max.   :1.00e+09  
-##                                                          
-##   CROPDMGAMNT      
-##  Min.   :0.00e+00  
-##  1st Qu.:0.00e+00  
-##  Median :0.00e+00  
-##  Mean   :5.32e+04  
-##  3rd Qu.:0.00e+00  
-##  Max.   :1.51e+09  
-## 
-```
-
 ## Results
 
 Finally, we summarise the data by event type and report the sum of fatalities and injuries as an overall measure of hazard to the US population, as well as the sum of property and crop damages as an overall measure of damage to the US economy (in USD).
@@ -175,63 +136,7 @@ tdata.summary = tdata %>%
   group_by(EVTYPE) %>%
   summarise(FATALITIES_AND_INJURIES = sum(FATALITIES) + sum(INJURIES),
             PROP_AND_CROP_DAMAGES = sum(PROPDMGAMNT) + sum(CROPDMGAMNT))
-
-
-
-tdata.summary.by_evtype_and_bgn_date = tdata %>%
-  group_by(BGN_DATE) %>%
-  summarise(FATALITIES = sum(FATALITIES),
-            INJURIES = sum(INJURIES),
-            PROPDMGAMNT = sum(PROPDMGAMNT),
-            CROPDMGAMNT = sum(CROPDMGAMNT)) %>%
-  print
 ```
-
-```
-## Source: local data frame [16 x 5]
-## 
-##    BGN_DATE FATALITIES INJURIES PROPDMGAMNT CROPDMGAMNT
-## 1      1996        542     2717     6.1e+09     1.9e+09
-## 2      1997        601     3800     9.6e+09     1.2e+09
-## 3      1998        687    11177     1.2e+10     4.5e+09
-## 4      1999        908     5148     8.7e+09     3.5e+09
-## 5      2000        477     2803     5.6e+09     3.3e+09
-## 6      2001        469     2721     1.0e+10     1.8e+09
-## 7      2002        498     3155     4.1e+09     1.4e+09
-## 8      2003        443     2931     1.0e+10     1.1e+09
-## 9      2004        370     2426     2.5e+10     1.5e+09
-## 10     2005        469     1834     9.7e+10     4.0e+09
-## 11     2006        599     3368     1.2e+11     3.5e+09
-## 12     2007        421     2191     5.8e+09     1.7e+09
-## 13     2008        488     2703     1.6e+10     2.2e+09
-## 14     2009        333     1354     5.2e+09     5.2e+08
-## 15     2010        425     1855     9.2e+09     1.8e+09
-## 16     2011       1002     7792     2.1e+10     6.7e+08
-```
-
-```r
-plot(FATALITIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-```
-
-![](PA2_template_files/figure-html/unnamed-chunk-8-1.png) 
-
-```r
-plot(INJURIES ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-```
-
-![](PA2_template_files/figure-html/unnamed-chunk-8-2.png) 
-
-```r
-plot(PROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-```
-
-![](PA2_template_files/figure-html/unnamed-chunk-8-3.png) 
-
-```r
-plot(CROPDMGAMNT ~ BGN_DATE, tdata.summary.by_evtype_and_bgn_date)
-```
-
-![](PA2_template_files/figure-html/unnamed-chunk-8-4.png) 
 
 ### Top 10 types of severe weather events most hazardous to the US population
 
